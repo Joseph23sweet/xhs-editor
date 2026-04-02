@@ -1,7 +1,0 @@
-{
-  "version": 2,
-  "outputDirectory": ".",
-  "routes": [
-    { "src": "/api/generate", "dest": "/api/generate.js" }
-  ]
-}
