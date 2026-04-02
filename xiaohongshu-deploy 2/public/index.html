@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>小红书 · 模拟编辑器 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#f0ebe6;--surface:#fff;--xhs:#E8291C;--xhs-dark:#C42416;--xhs-bg:#F7F7F7;--accent:#f5a623;--blue:#4a90d9;--text:#1a1a1a;--text2:#555;--text3:#aaa;--border:#e8e0d8;--r:14px;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+.tb{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
+.tb-logo{display:flex;align-items:center;gap:8px}
+.tb-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--xhs),var(--xhs-dark));border-radius:9px;display:flex;align-items:center;justify-content:center}
+.tb-icon svg{width:16px;height:16px;color:#fff}
+.tb h1{font-family:"Noto Serif SC",serif;font-size:15px;font-weight:700;letter-spacing:1px}
+.tb-sep{width:1px;height:18px;background:var(--border)}
+.tb-tag{font-size:10px;color:var(--text3);background:var(--bg);padding:2px 8px;border-radius:20px;border:1px solid var(--border)}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-family:inherit;transition:.2s all}
+.tb-btn:hover{border-color:var(--xhs);color:var(--xhs)}
+.tb-btn.pri{background:linear-gradient(135deg,var(--xhs),var(--xhs-dark));color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(232,41,28,.3)}
+.tb-btn.pri:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(232,41,28,.4)}
+.tb-btn svg{width:13px;height:13px}
+
+.main{display:grid;grid-template-columns:35fr 35fr 30fr;flex:1;overflow:hidden}
+.panel{display:flex;flex-direction:column;overflow:hidden}
+.panel-h{padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.panel-title{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.panel-dot{width:6px;height:6px;border-radius:50%}
+.panel-body{flex:1;overflow-y:auto;padding:14px;background:var(--bg)}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.po{border-right:1px solid var(--border);background:var(--surface)}
+.outline-ta{width:100%;height:calc(100% - 90px);min-height:300px;border:none;outline:none;resize:none;font-family:"Noto Sans SC",sans-serif;font-size:13.5px;line-height:2;color:var(--text);background:transparent;display:block}
+.outline-ta::placeholder{color:var(--text3)}
+.upload-file-btn,.ai-script-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--xhs);background:var(--surface);color:var(--xhs);font-family:inherit;transition:all .2s}
+.upload-file-btn:hover,.ai-script-btn:hover{background:var(--xhs);color:#fff}
+.upload-file-btn svg,.ai-script-btn svg{width:12px;height:12px}
+.file-list{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.file-item:hover{border-color:var(--xhs);background:#fce8e6}
+.file-item-icon{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--xhs),var(--xhs-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-item-icon svg{width:12px;height:12px;color:#fff}
+.file-item-info{flex:1;overflow:hidden}
+.file-item-name{font-size:12px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item-size{font-size:10px;color:var(--text3)}
+.file-item-remove{width:18px;height:18px;border-radius:50%;background:var(--text3);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;transition:background .2s}
+.file-item-remove:hover{background:var(--xhs)}
+
+/* AI Script Modal */
+.ai-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.ai-modal-overlay.active{opacity:1;pointer-events:all}
+.ai-modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:520px;transform:scale(.9) translateY(20px);transition:transform .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.ai-modal-overlay.active .ai-modal{transform:scale(1) translateY(0)}
+.ai-modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ai-modal-h2{font-family:"Noto Serif SC",serif;font-size:17px;font-weight:700;color:var(--text)}
+.ai-modal-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);transition:background .2s}
+.ai-modal-close:hover{background:#f0e0e0;color:var(--xhs)}
+.ai-prompt-label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.ai-prompt-ta{width:100%;min-height:120px;padding:12px;border:1.5px solid var(--border);border-radius:12px;outline:none;resize:vertical;font-family:"Noto Sans SC",sans-serif;font-size:13px;color:var(--text);line-height:1.7;transition:border-color .2s}
+.ai-prompt-ta:focus{border-color:var(--xhs);box-shadow:0 0 0 3px rgba(232,41,28,.08)}
+.ai-modal-hint{font-size:11px;color:var(--text3);margin-top:6px;margin-bottom:18px}
+.ai-modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.ai-gen-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:20px;background:linear-gradient(135deg,var(--xhs),var(--xhs-dark));color:#fff;border:none;cursor:pointer;font-family:"Noto Sans SC",sans-serif;font-size:13px;font-weight:500;box-shadow:0 3px 12px rgba(232,41,28,.3);transition:all .2s}
+.ai-gen-btn:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(232,41,28,.4)}
+.ai-gen-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ai-gen-btn svg{width:15px;height:15px}
+.ai-cancel-btn{padding:11px 20px;border-radius:20px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:"Noto Sans SC",sans-serif;font-size:13px;color:var(--text2);transition:all .2s}
+.ai-cancel-btn:hover{border-color:var(--xhs);color:var(--xhs)}
+
+/* Script Tabs */
+.script-tabs-wrap{margin-top:10px}
+.script-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.script-tab{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--surface);border:1.5px solid var(--border);border-radius:20px;cursor:pointer;font-size:11px;font-weight:500;color:var(--text2);transition:all .2s;user-select:none}
+.script-tab.active{border-color:var(--xhs);color:var(--xhs);background:#fce8e6}
+.script-tab:hover{ border-color:var(--xhs)}
+.script-tab-close{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;cursor:pointer;transition:background .2s}
+.script-tab-close:hover{background:rgba(232,41,28,.2);color:var(--xhs)}
+.script-content{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);font-size:13.5px;line-height:2;color:var(--text);white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.script-content::-webkit-scrollbar{width:3px}
+.script-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.script-empty{text-align:center;padding:16px;color:var(--text3);font-size:13px}
+
+.pc{border-right:1px solid var(--border);background:var(--surface)}
+.sb{margin-bottom:18px}
+.sl{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sl::after{content:"";flex:1;height:1px;background:var(--border)}
+.div{height:1px;background:var(--border);margin:4px 0 14px}
+.ti{background:var(--bg);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;border:1.5px solid transparent;transition:border-color .2s,box-shadow .2s}
+.ti:focus-within{border-color:var(--xhs);box-shadow:0 0 0 3px rgba(232,41,28,.08)}
+.ti-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.ti-n{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--xhs),var(--xhs-dark));color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ti-cc{font-size:10px;color:var(--text3);transition:color .2s;flex-shrink:0}
+.ti-cc.warn{color:var(--accent)}
+.ti-cc.danger{color:var(--xhs)}
+.ti input{width:100%;border:none;outline:none;background:transparent;font-family:"Noto Sans SC",sans-serif;font-size:13px;color:var(--text);line-height:1.5}
+.ti input::placeholder{color:var(--text3)}
+.pua{margin-top:8px;border:1.5px dashed var(--border);border-radius:var(--r);padding:10px;text-align:center;cursor:pointer;transition:.2s all;position:relative;overflow:hidden;display:inline-block;width:90px}
+.pua:hover{border-color:var(--xhs);background:#fce8e6}
+.pua.has{border-style:solid;border-color:var(--xhs);padding:0;width:90px}
+.pua-p{width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;display:block}
+.pua-p img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pua-l{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text3);pointer-events:none}
+.pua-l svg{width:20px;height:20px;opacity:.5}
+.pua-l span{font-size:10px}
+.pua-o{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;color:#fff;font-size:11px;font-weight:500}
+.pua:hover .pua-o{opacity:1}
+
+.ppr{background:var(--bg)}
+.pw{display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
+.pf{width:300px;background:#1a1a1a;border-radius:42px;padding:10px;box-shadow:0 30px 90px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.06) inset;position:relative}
+.pf::before{content:"";position:absolute;left:-3px;top:90px;width:3px;height:30px;background:#2a2a2a;border-radius:0 3px 3px 0}
+.pf::after{content:"";position:absolute;right:-3px;top:80px;width:3px;height:60px;background:#2a2a2a;border-radius:3px 0 0 3px}
+.ps{background:var(--xhs-bg);border-radius:34px;overflow:hidden;height:700px;display:flex;flex-direction:column}
+
+.sb2{height:44px;background:var(--xhs);display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 7px;flex-shrink:0}
+.sb2-t{font-size:13px;font-weight:700;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.sb2-i{display:flex;gap:4px;align-items:center}
+.sb2-i svg{width:15px;height:15px;color:#fff}
+
+.xh{background:var(--xhs);padding:8px 14px 10px;flex-shrink:0}
+.xh-r{display:flex;align-items:center;gap:10px}
+.xl{font-family:"Noto Serif SC",serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:2px;flex-shrink:0}
+.xs{flex:1;background:rgba(255,255,255,.18);border-radius:18px;padding:7px 14px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.xs svg{width:13px;height:13px;color:rgba(255,255,255,.8);flex-shrink:0}
+.xs span{font-size:12px;color:rgba(255,255,255,.75);font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.xs2{background:var(--xhs);display:flex;overflow-x:auto;flex-shrink:0;padding:0}
+.xs2::-webkit-scrollbar{display:none}
+.xt{padding:6px 12px 9px;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);white-space:nowrap;border-bottom:2.5px solid transparent;cursor:pointer;transition:color .2s}
+.xt.active{color:#fff;font-weight:700;border-bottom-color:#fff}
+
+.fs{flex:1;overflow-y:auto;padding:10px 10px 0}
+.fs::-webkit-scrollbar{width:0}
+.wf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.xc{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:8px;box-shadow:0 1px 5px rgba(0,0,0,.05);transition:transform .2s,box-shadow .2s}
+.xc:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.xc:nth-child(2){transform:rotate(.15deg)}
+.xc:nth-child(2):hover{transform:rotate(.15deg) translateY(-2px)}
+.xc:nth-child(3){transform:rotate(-.12deg)}
+.xc:nth-child(3):hover{transform:rotate(-.12deg) translateY(-2px)}
+.xc:nth-child(4){transform:rotate(.08deg)}
+.xc:nth-child(4):hover{transform:rotate(.08deg) translateY(-2px)}
+.xcw{width:100%;padding-top:133.33%;background:linear-gradient(135deg,#fce8e6,#fdeee8);position:relative;overflow:hidden}
+.xcw img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.xcd{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#ccc}
+.xcd svg{width:24px;height:24px;opacity:.4}
+.xcd span{font-size:8px}
+.xcb{padding:8px 9px 10px}
+.xct{font-size:10px;font-weight:500;color:#1a1a1a;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px}
+.xct.pl{color:#bbb;font-weight:300}
+.xca{display:flex;align-items:center;gap:6px}
+.xcav{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#ffcccc,#ffe0e0);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--xhs);font-weight:700;flex-shrink:0;overflow:hidden}
+.xcav img{width:100%;height:100%;object-fit:cover}
+.xcn{font-size:10px;color:#888;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xcli{display:flex;align-items:center;gap:3px;font-size:10px;color:#aaa}
+.xcli svg{width:11px;height:11px}
+
+.xtb{height:52px;background:#fff;display:flex;align-items:center;border-top:1px solid #f0f0f0;flex-shrink:0;padding:0 2px}
+.xti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;color:#aaa;cursor:pointer}
+.xti svg{width:22px;height:22px}
+.xti.active{color:var(--xhs)}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(30,30,30,.85);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;z-index:200;transition:transform .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;backdrop-filter:blur(8px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+input[type=file]{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.po{animation:fadeUp .5s ease both}
+.pc{animation:fadeUp .5s .06s ease both}
+.ppr{animation:fadeUp .5s .12s ease both}
+</style>
+</head>
+<body>
+
+<div class="tb">
+  <div class="tb-logo">
+    <div class="tb-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </div>
+    <h1>小红书模拟编辑器</h1>
+  </div>
+  <div class="tb-sep"></div>
+  <span class="tb-tag">BETA v2.0</span>
+  <div class="tb-r">
+    <button class="tb-btn" onclick="resetAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.6"/></svg>
+      重置
+    </button>
+    <button class="tb-btn pri" onclick="saveData()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      保存
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="panel po">
+    <div class="panel-h">
+      <div class="panel-title"><div class="panel-dot" style="background:var(--xhs)"></div>大纲 / 正文</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="ai-script-btn" onclick="openAiModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          AI 脚本
+        </button>
+        <button class="upload-file-btn" onclick="triggerFileUpload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          上传文件
+        </button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <textarea class="outline-ta" id="outlineText" placeholder="在这里输入你的笔记大纲或正文内容
+
+可以输入长文案，也可以只使用标题作为简短笔记。
+
+内容会自动保存到本地。"></textarea>
+      <div id="fileList"></div>
+      <div id="scriptArea"></div>
+    </div>
+  </div>
+
+  <div class="panel pc">
+    <div class="panel-h">
+      <div class="panel-title"><div class="panel-dot" style="background:var(--accent)"></div>标题 &amp; 封面</div>
+      <span style="font-size:11px;color:var(--text3)">4 个笔记</span>
+    </div>
+    <div class="panel-body">
+      <div class="sb">
+        <div class="sl">笔记标题</div>
+        <div id="titleList"></div>
+      </div>
+      <div class="div"></div>
+      <div class="sb">
+        <div class="sl">封面图片</div>
+        <div id="photoList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel ppr">
+    <div class="panel-h">
+      <div class="panel-title"><div class="panel-dot" style="background:var(--blue)"></div>手机预览</div>
+      <span style="font-size:11px;color:var(--text3)">小红书真实风格</span>
+    </div>
+    <div class="panel-body" style="display:flex;align-items:flex-start;justify-content:center;">
+      <div class="pw">
+        <div class="pf">
+          <div class="ps">
+
+            <div class="sb2">
+              <span class="sb2-t" id="statusTime">9:41</span>
+              <div class="sb2-i">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+              </div>
+            </div>
+
+            <div class="xh">
+              <div class="xh-r">
+                <div class="xl">小红书</div>
+                <div class="xs">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span>搜索笔记、商品、用户</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="fs"><div class="wf" id="xhsWaterfall"></div></div>
+
+            <div class="xtb">
+              <div class="xti active">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                首页
+              </div>
+              <div class="xti">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                搜索
+              </div>
+              <div class="xti">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                创作
+              </div>
+              <div class="xti">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                消息
+              </div>
+              <div class="xti">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                我的
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- AI Script Modal -->
+<div class="ai-modal-overlay" id="aiModal">
+  <div class="ai-modal">
+    <div class="ai-modal-h">
+      <div class="ai-modal-h2">✨ AI 脚本生成器</div>
+      <button class="ai-modal-close" onclick="closeAiModal()">&#x2715;</button>
+    </div>
+    <div class="ai-prompt-label">提示词</div>
+    <textarea class="ai-prompt-ta" id="aiPromptTa" placeholder="输入提示词…" oninput="savePrompt()"></textarea>
+    <div class="ai-modal-hint">提示词会自动保存，下次打开自动填充</div>
+    <div class="ai-modal-actions">
+      <button class="ai-cancel-btn" onclick="closeAiModal()">取消</button>
+      <button class="ai-gen-btn" id="aiGenBtn" onclick="generateScript()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        生成脚本
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var CARD_COUNT=4,MAX_CHARS=20,STORAGE_KEY="xhs_editor_v1";
+var defaultImages=[
+  "https://images.unsplash.com/photo-1543362906-acfc16c67564?w=400&h=533&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&h=533&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=533&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1485968579169-a6b39a8e3e1b?w=400&h=533&fit=crop&q=80"
+];
+var nicknames=["小雪很努力","穿搭日记","美食探险家","美妆控"];
+var state={outline:"",titles:["","","",""],images:[].concat(defaultImages),uploaded:[false,false,false,false],files:[],scripts:[],activeScript:0,lastPrompt:"你是一个专业的小红书文案写手。请根据用户提供的大纲或标题，帮我撰写一篇小红书笔记脚本。要求：1. 语言生动有趣，符合小红书风格 2. 开头要有吸引力，能引发共鸣或好奇 3. 内容要有干货，有实操性 4. 结尾要有互动引导，引导点赞、收藏、评论 5. 注意分段合理，重点加粗突出 6. 总字数控制在900-1000字左右"};
+
+// ⚠️ 请在此处填入你的 DeepSeek API Key
+var API_KEY=""; // API Key 已移至服务端，前端不再存储 Key
+// ⚠️ 部署后填入你的 Vercel 地址，如 https://your-app.vercel.app
+var API_BASE="";
+
+function loadState(){
+  try{var s=localStorage.getItem(STORAGE_KEY);if(s)state=Object.assign({},state,JSON.parse(s));}catch(e){}
+}
+function saveState(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
+}
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg;
+  t.classList.add("show");
+  setTimeout(function(){t.classList.remove("show");},2200);
+}
+function updateStatusTime(){
+  var d=new Date();
+  var h=String(d.getHours()).padStart(2,"0");
+  var m=String(d.getMinutes()).padStart(2,"0");
+  var el=document.getElementById("statusTime");
+  if(el)el.textContent=h+":"+m;
+}
+
+function renderTitles(){
+  var c=document.getElementById("titleList");
+  if(!c)return;
+  c.innerHTML="";
+  for(var i=0;i<CARD_COUNT;i++){
+    var len=state.titles[i].length;
+    var cls=len>=MAX_CHARS?"danger":len>=MAX_CHARS-5?"warn":"";
+    var item=document.createElement("div");
+    item.className="ti";
+    item.innerHTML='<div class="ti-h"><div class="ti-n">'+(i+1)+'</div><span class="ti-cc '+cls+'">'+len+"/"+MAX_CHARS+'</span></div><input type="text" placeholder="输入第 '+(i+1)+' 篇标题…" maxlength="'+MAX_CHARS+'" />';
+    var input=item.querySelector("input");
+    input.value=state.titles[i];
+    input.addEventListener("input",(function(idx){
+      return function(){
+        var val=this.value;
+        if(val.length>MAX_CHARS){this.value=val.substring(0,MAX_CHARS);val=this.value;}
+        state.titles[idx]=val;
+        // update char count without full re-render
+        var countEl=this.parentElement.querySelector(".ti-cc");
+        if(countEl){countEl.textContent=val.length+"/"+MAX_CHARS;countEl.className="ti-cc "+(val.length>=MAX_CHARS?"danger":val.length>=MAX_CHARS-5?"warn":"");}
+        renderWaterfall();
+        saveState();
+      };
+    })(i));
+    c.appendChild(item);
+  }
+}
+
+function renderPhotos(){
+  var c=document.getElementById("photoList");
+  if(!c)return;
+  c.innerHTML="";
+  for(var i=0;i<CARD_COUNT;i++){
+    var hasImg=state.uploaded[i];
+    var item=document.createElement("div");
+    item.className="ti";
+    var imgContent=hasImg
+      ? '<div class="pua-p"><img src="'+state.images[i]+'" alt="封面" /></div>'
+      : '<div class="pua-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>上传 3:4 竖版封面</span></div>';
+    var overlay=hasImg?'<div class="pua-o"><span>点击更换封面</span></div>':'';
+    item.innerHTML='<div class="ti-h"><div class="ti-n">'+(i+1)+'</div><span style="font-size:10px;color:var(--text3)">'+(hasImg?"已上传 · 点击更换":"点击上传封面")+'</span></div><div class="pua '+(hasImg?"has":"")+'" onclick="triggerUpload('+i+')">'+imgContent+overlay+"</div>";
+    c.appendChild(item);
+  }
+}
+
+function triggerUpload(idx){
+  var input=document.createElement("input");
+  input.type="file";
+  input.accept="image/*";
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      state.images[idx]=ev.target.result;
+      state.uploaded[idx]=true;
+      renderPhotos();
+      renderWaterfall();
+      toast("封面已更新");
+      saveState();
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function renderWaterfall(){
+  var c=document.getElementById("xhsWaterfall");
+  if(!c)return;
+  c.innerHTML="";
+  for(var i=0;i<CARD_COUNT;i++){
+    var hasImg=state.uploaded[i];
+    var img=state.images[i];
+    var title=state.titles[i];
+    var likes=Math.floor(Math.random()*300)+80;
+    var views=Math.floor(Math.random()*5000)+200;
+    var card=document.createElement("div");
+    card.className="xc";
+    var imgHtml=hasImg
+      ? '<img src="'+img+'" alt="封面" loading="lazy" />'
+      : '<div class="xcd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>';
+    card.innerHTML='<div class="xcw">'+imgHtml+'</div><div class="xcb"><div class="xct '+(title?"":"pl")+'">'+(title?esc(title):"暂无标题")+'</div><div class="xca"><div class="xcav"></div><div class="xcn">'+nicknames[i]+'</div><div class="xcli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+likes+"</div></div></div>";
+    c.appendChild(card);
+  }
+}
+
+function updateOutlineCount(){
+  var el=document.getElementById("outlineCount");
+  if(el)el.textContent=document.getElementById("outlineText").value.length+" 字";
+}
+
+function triggerFileUpload(){
+  var input=document.createElement("input");
+  input.type="file";
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      state.files.push({name:file.name,size:file.size,data:ev.target.result});
+      renderFileList();
+      saveState();
+      toast("文件已添加");
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function renderFileList(){
+  var c=document.getElementById("fileList");
+  if(!c)return;
+  if(state.files.length===0){c.innerHTML="";return;}
+  c.className="file-list";
+  c.innerHTML="";
+  state.files.forEach(function(file,i){
+    var item=document.createElement("div");
+    item.className="file-item";
+    var sizeLabel=file.size>1024*1024?(file.size/(1024*1024)).toFixed(1)+"MB":(file.size/1024).toFixed(0)+"KB";
+    item.innerHTML='<div class="file-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="file-item-info"><div class="file-item-name" title="'+file.name+'">'+file.name+'</div><div class="file-item-size">'+sizeLabel+'</div></div><div class="file-item-remove" onclick="event.stopPropagation();removeFile('+i+')">&#x2715;</div>';
+    item.addEventListener("click",(function(idx){return function(){openFile(idx);};})(i));
+    c.appendChild(item);
+  });
+}
+
+function openFile(idx){
+  var file=state.files[idx];
+  if(!file)return;
+  var win=window.open("","_blank");
+  if(file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)){
+    win.document.write('<html><head><title>'+file.name+'</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#111}img{max-width:100%;max-height:100%}</style></head><body><img src="'+file.data+'" /></body></html>');
+  } else if(file.name.match(/\.(pdf)$/i)){
+    win.document.write('<html><head><title>'+file.name+'</title><style>body{margin:0;height:100vh}iframe{width:100%;height:100%;border:none}</style></head><body><iframe src="'+file.data+'"></iframe></body></html>');
+  } else {
+    win.location.href=file.data;
+  }
+  toast("预览："+file.name);
+}
+
+function removeFile(idx){
+  state.files.splice(idx,1);
+  renderFileList();
+  saveState();
+}
+
+function openAiModal(){
+  document.getElementById("aiModal").classList.add("active");
+  document.getElementById("aiPromptTa").value=state.lastPrompt||"";
+}
+function closeAiModal(){
+  document.getElementById("aiModal").classList.remove("active");
+}
+function savePrompt(){
+  state.lastPrompt=document.getElementById("aiPromptTa").value;
+  saveState();
+}
+
+// ⚠️ 部署后填入你的 Vercel 地址，如 https://your-app.vercel.app
+var API_BASE="https://xiaohongshu-simulator.vercel.app";
+
+function generateScript(){
+  var outline=document.getElementById("outlineText").value.trim();
+  if(!outline){toast("请先填写大纲内容");return;}
+  var prompt=document.getElementById("aiPromptTa").value;
+  state.lastPrompt=prompt;
+  var btn=document.getElementById("aiGenBtn");
+  btn.disabled=true;
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 生成中…';
+
+  fetch(API_BASE+"/api/generate",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({outline:outline,prompt:prompt,versionCount:2})
+  }).then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error){toast(data.error);btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 生成脚本';return;}
+    var results=data.results||[];
+    var labels=["V1","V2"];
+    for(var i=0;i<results.length;i++){
+      if(state.scripts.length>i){state.scripts[i].text=results[i];}
+      else{state.scripts.push({label:labels[i]||("V"+(i+1)),text:results[i]||"（未生成）"});}
+    }
+    state.activeScript=0;
+    saveState();
+    renderScriptArea();
+    closeAiModal();
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 生成脚本';
+    toast(results.length+" 个版本已生成");
+  }).catch(function(){
+    toast("生成失败，请稍后重试");
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 生成脚本';
+  });
+}
+
+function renderScriptArea(){
+  var c=document.getElementById("scriptArea");
+  if(!c)return;
+  if(state.scripts.length===0){c.innerHTML="";return;}
+  var active=state.activeScript;
+  var tabsHtml='<div class="script-tabs-wrap"><div class="script-tabs">';
+  for(var i=0;i<state.scripts.length;i++){
+    var s=state.scripts[i];
+    tabsHtml+='<div class="script-tab'+(i===active?' active':'')+'" onclick="switchScript('+i+')">'+s.label+'<span class="script-tab-close" onclick="event.stopPropagation();confirmRemoveScript('+i+')">&#x2715;</span></div>';
+  }
+  tabsHtml+='</div>';
+  var content=safeHtml(state.scripts[active]?state.scripts[active].text:"");
+  c.innerHTML=tabsHtml+'<div class="script-content">'+content+'</div></div>';
+}
+
+function safeHtml(str){
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+}
+
+function switchScript(idx){
+  state.activeScript=idx;
+  renderScriptArea();
+}
+
+function confirmRemoveScript(idx){
+  var name=state.scripts[idx]?state.scripts[idx].label:"V"+(idx+1);
+  if(!confirm("确定删除 "+name+" 吗？"))return;
+  state.scripts.splice(idx,1);
+  if(state.activeScript>=state.scripts.length)state.activeScript=Math.max(0,state.scripts.length-1);
+  saveState();
+  renderScriptArea();
+  toast(name+" 已删除");
+}
+
+function resetAll(){
+  if(!confirm("确定要重置所有内容吗？"))return;
+  state={outline:"",titles:["","","",""],images:[].concat(defaultImages),uploaded:[false,false,false,false],files:[],scripts:[],activeScript:0,lastPrompt:state.lastPrompt};
+  document.getElementById("outlineText").value="";
+  renderAll();
+  saveState();
+  toast("已重置");
+}
+function saveData(){saveState();toast("已保存到本地");}
+function renderAll(){renderTitles();renderPhotos();renderWaterfall();updateOutlineCount();updateStatusTime();renderFileList();renderScriptArea();}
+
+document.getElementById("outlineText").addEventListener("input",function(){
+  state.outline=this.value;
+  updateOutlineCount();
+  saveState();
+});
+
+loadState();
+document.getElementById("outlineText").value=state.outline||"";
+renderAll();
+setInterval(updateStatusTime,1000);
+</script>
+</body>
+</html>
