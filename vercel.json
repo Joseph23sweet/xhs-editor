@@ -1,6 +1,6 @@
 {
-  "outputDirectory": "public",
+  "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/generate.js" }
+    { "source": "/api/generate", "dest": "/api/generate.js" }
   ]
 }
