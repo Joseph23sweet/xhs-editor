@@ -1,6 +1,7 @@
 {
+  "version": 2,
   "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/api/generate", "destination": "/api/generate.js" }
+  "routes": [
+    { "src": "/api/generate", "dest": "/api/generate.js" }
   ]
 }
